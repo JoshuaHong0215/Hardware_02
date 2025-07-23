@@ -1,3 +1,178 @@
+🧾 README – Servo 버튼 제어 및 Turtle 연동 프로젝트
+📌 프로젝트 목적
+버튼을 누르면 서보 모터가 4번 작동하고, 동시에 PC의 거북이(turtle)가 앞으로 전진하는 동작을 구현한다.
+
+아두이노에서 물리 버튼을 통해 신호를 보내고, Python에서 이를 수신하여 GUI 상의 터틀 거북이가 반응하도록 구성되어 있다.
+
+🛠 시스템 구성 요약
+구성 요소	설명
+아두이노 UNO	버튼 신호 감지, 서보 모터 제어, "전진" 시리얼 명령 전송
+서보 모터	버튼 누를 때 4회 회전 동작 수행 (0도 ↔ 180도)
+물리 버튼	누르면 아두이노가 신호 감지
+Python (Thonny)	"전진" 메시지를 수신하면 거북이 전진
+거북이 Turtle	그래픽으로 움직이는 GUI 거북이 (800픽셀 이동)
+
+🧩 시스템 흐름
+css
+복사
+편집
+[ 버튼 누름 ]
+      ↓
+[ 아두이노 → 서보 모터 4회 작동 ]
+      ↓
+[ 아두이노 → "전진" 메시지 전송 (Serial) ]
+      ↓
+[ Python(Thonny) 수신 ]
+      ↓
+[ 거북이 800픽셀 전진 ]
+🔧 1. 아두이노 코드 설명
+cpp
+복사
+편집
+#include <Servo.h>
+
+const int buttonPin = 7;     // 버튼 핀
+const int servoPin = 6;      // 서보 핀
+Servo myservo;
+
+bool readyToDetect = false;
+bool buttonWasPressed = false;
+
+void setup() {
+  pinMode(buttonPin, INPUT_PULLUP);   // 풀업 설정
+  myservo.attach(servoPin);           // 서보 연결
+  Serial.begin(9600);                 // 시리얼 통신 시작
+}
+
+void loop() {
+  int buttonState = digitalRead(buttonPin);
+
+  if (buttonState == HIGH) {
+    readyToDetect = true;
+    buttonWasPressed = false;
+  }
+
+  if (readyToDetect && buttonState == LOW && !buttonWasPressed) {
+    buttonWasPressed = true;
+
+    // 서보 모터 4번 움직임
+    for (int i = 0; i < 4; i++) {
+      myservo.write(0);
+      delay(500);
+      myservo.write(180);
+      delay(500);
+    }
+
+    // Python에 "전진" 명령 전송
+    Serial.println("전진");
+  }
+}
+🔍 아두이노 코드 주요 동작
+INPUT_PULLUP으로 버튼을 누를 때 LOW로 감지됨
+
+버튼이 눌렸을 때만 한 번만 작동
+
+서보가 4번 움직이고 "전진" 메시지 전송
+
+🐍 2. Python (Thonny) 코드 설명
+python
+복사
+편집
+import turtle
+import serial
+import time
+
+# Turtle 세팅
+t = turtle.Turtle()
+t.shape("turtle")
+turtle.bgcolor("skyblue")
+t.fillcolor("blue")
+t.shapesize(2, 2, 2)
+t.pencolor("blue")
+t.pensize(4)
+t.penup()
+t.goto(-400, 0)
+t.pendown()
+
+# 아두이노 시리얼 연결
+try:
+    ser = serial.Serial('COM4', 9600, timeout=1)
+    time.sleep(2)
+    print("시리얼 연결 완료")
+except:
+    print("시리얼 연결 실패")
+    ser = None
+
+# 명령 수신 루프
+def listen_for_command():
+    while True:
+        if ser and ser.in_waiting > 0:
+            data = ser.readline().decode().strip()
+            print(f"받은 명령: {data}")
+            if data == "전진":
+                print("거북이 앞으로 800픽셀 전진합니다.")
+                t.forward(800)
+
+listen_for_command()
+🔍 Python 코드 주요 동작
+아두이노에서 "전진" 메시지를 수신하면
+
+거북이가 t.forward(800)으로 이동
+
+시리얼 연결이 먼저 되어야 함 (COM 포트 확인)
+
+✅ 실습 요령
+아두이노 코드 업로드
+
+서보와 버튼, 시리얼 통신 정상 작동 확인
+
+Python 코드 실행
+
+Thonny에서 실행 후 "시리얼 연결 완료" 확인
+
+버튼 누르기
+
+서보가 4번 움직이고
+
+PC의 거북이가 800픽셀 전진
+
+💡 참고 사항
+버튼은 INPUT_PULLUP 방식이므로, 눌렸을 때 LOW가 됨
+
+Serial.println("전진") 메시지는 반드시 \n으로 끝나야 Python이 정확히 인식함
+
+COM 포트 번호는 사용자 PC 환경에 따라 변경될 수 있음 (ex. COM3, COM4 등)
+
+거북이의 픽셀 이동 거리는 t.forward() 값으로 조절 가능
+
+📁 관련 파일 구성 예시
+bash
+복사
+편집
+📂 ServoTurtleProject
+├── arduino_servo_button.ino      # 아두이노 코드
+├── turtle_move.py                # Thonny에서 실행할 Python 코드
+└── README.md                     # 이 설명 파일
+필요하시다면 이 내용을 실제 README.md 파일로 만들어드릴 수도 있습니다.
+추가적으로 .ino와 .py 파일도 정리 원하시면 함께 구성해드릴게요.
+
+
+
+
+
+
+
+
+나의 말:
+아니 마크다운 형식으로 복사해서 붙여넣을 수 있는 방법으로 해줘
+
+
+ChatGPT의 말:
+물론입니다! 아래는 복사해서 .md 파일에 붙여넣을 수 있는 마크다운(Markdown) 형식의 README.md입니다:
+
+markdown
+복사
+편집
 # 🧾 Servo 버튼 제어 및 Turtle 연동 프로젝트
 
 ## 📌 프로젝트 목적
@@ -142,29 +317,3 @@ Python 코드는 아두이노로부터 "전진"이라는 문자열을 수신하�
 COM 포트 번호(COM4)는 PC마다 다를 수 있으며 환경에 맞게 설정하세요.
 
 거북이 이동 거리는 t.forward() 값으로 조절 가능합니다.
-
-📁 파일 구조 예시
-bash
-복사
-편집
-📂 ServoTurtleProject
-├── arduino_servo_button.ino      # 아두이노 코드
-├── turtle_move.py                # Thonny에서 실행할 Python 코드
-└── README.md                     # 설명 파일 (이 문서)
-go
-복사
-편집
-
-위 내용을 복사해서 `.md` 파일로 저장하시면 됩니다.  
-예: `README.md` 라는 파일로 저장한 후 GitHub 등에 업로드하면 자동으로 예쁘게 렌더링됩니다.
-
-필요하시면 `.ino`, `.py`, `.md`까지 함께 묶어서 zip 파일로 구성해드릴 수도 있습니다.
-
-
-
-
-
-
-
-
-ChatGPT에게 묻기

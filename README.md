@@ -78,10 +78,10 @@ void loop() {
     Serial.println("전진");
   }
 }
-🐍 2. Python 코드 (turtle_move.py)
+
+##🐍 2. Python 코드 (turtle_move.py)
 python
-복사
-편집
+
 import turtle
 import serial
 import time
